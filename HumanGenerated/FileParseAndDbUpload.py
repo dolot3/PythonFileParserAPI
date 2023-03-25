@@ -19,8 +19,8 @@ import sys
 #NOTES ON BUILDING ****************************************
 # pyInstaller has to be installed in the same directory as everything else - not in the main python install location.
 # Otherwise I won't see the cryptography package.  
-# Example syntax for pyInstaller:  c:\_work\Accutrol\ccs100-webapi\env\Scripts\pyinstaller.exe fileparseanddbupload.py
-# The above needs to be ran from the directory that contains the .py file to be compiled (i.e. c:\_work\Accutrol\ccs100-webapi)
+# Example syntax for pyInstaller:  c:\_work\apiName\env\Scripts\pyinstaller.exe fileparseanddbupload.py
+# The above needs to be ran from the directory that contains the .py file to be compiled (i.e. c:\_work\apiName)
 # The full install for both the API and FileParseandDbUpload compoents is located in the /dist directory.
 # We have to manually copy the DatabaseAPI.INI file into each of those directories before bundling them into a zip for distribution.
 # There's probably a way to do that automatically using pyInstaller, but I didn't bother with figuring it out.
@@ -56,11 +56,6 @@ def getDirectories(path):
 
     try:
     #Get a list of all the stuff in the directory - just a list of files and folders - no path info comes back.
-    #2020-09-20.ghw Check if directory exists before trying to navigate it
-    #        for d in os.listdir(path):
-    #            #check to see if this thing is NOT a file (have to use join to link the file to the specific directory, since by default it uses your working directory)
-    #            if not os.path.isfile(os.path.join(path, d)):
-    #                directories.append(os.path.join(path, d))
         if os.path.exists(path):
             for d in os.listdir(path):
                 #check to see if this thing is NOT a file (have to use join to link the file to the specific directory, since by default it uses your working directory)
@@ -79,7 +74,6 @@ def getTestFiles(path, pattern):
 
     try:
         #Get a list of all the stuff in the directory - just a list of files and folders - no path info comes back.
-        # ghw 2020vv First check to see that path exists
         if os.path.exists(path):
             for f in os.listdir(path):
 
@@ -101,14 +95,12 @@ def getTestFiles(path, pattern):
     
     return files
 
-#2020-09-20.ghw Added routine to return list of Settings files in Settings folder
 def getSettingsFiles(path, pattern):
 
     files = []
 
     try:
         #Get a list of all the stuff in the directory - just a list of files and folders - no path info comes back.
-        # ghw 2020vv First check to see that path exists
         if os.path.exists(path):
             for f in os.listdir(path):
 
@@ -143,8 +135,6 @@ def getDbConnection():
     userid = parser.get('database', 'userid')
     ePassword = parser.get('database', 'password')
 
-    #2020-09-20.ghw Replaced encryption with ASCII encoding
-    #password = decrypt(ePassword)
     password = ASCIItoString(ePassword)
 
     #create the connection.
@@ -152,15 +142,12 @@ def getDbConnection():
      
     return conn
 
-#2020-09-20.ghw Retrieve working folder from configuration
 def getWorkingFolder():
     return parser.get('file_paths', 'workingfilepath')
 
-#2020-09-20.ghw Retrieve archive folder from configuration
 def getArchiveFolder():
     return parser.get('file_paths', 'filearchivepath')
 
-#2020-09-20.ghw Retrieve problem folder from configuration
 def getProblemFolder():
     return parser.get('file_paths', 'fileproblempath')
 
@@ -183,15 +170,12 @@ def decrypt(password):
 
     f = getFernet()
 
-#2020-09-20.ghw return f.decrypt(ePassword.encode())
     return f.decrypt(password.encode())
 
-#2020-09-20.ghw Simple string to ASCII encoding
 def StringToASCII(string):
     AsciiText = string.encode('utf-8').hex()
     return AsciiText
 
-#2020-09-20.ghw Simple ASCII to string decoding
 def ASCIItoString(hexASCII):
     text = bytearray.fromhex(hexASCII).decode()
     return text
@@ -234,7 +218,6 @@ def delete_file(file):
     if os.path.exists(file):
         os.remove(file)
 
-#2020-09-20.ghw Don't delete files after processing. Instead, move them to the Archive folder.
 def move_file_to_ArchiveFolder(file):
     if os.path.exists(file):
         workingFolder = getWorkingFolder()
@@ -245,7 +228,6 @@ def move_file_to_ArchiveFolder(file):
             os.makedirs(destFolder)
         shutil.move(file, dest)  # use shutil in case source and dest are on different computers
 
-#2020-09-20.ghw Move files that have a problem to the Problem folder.
 def move_file_to_ProblemFolder(file):
     if os.path.exists(file):
         workingFolder = getWorkingFolder()
@@ -291,7 +273,6 @@ def handle_exception(more_info=""):
 #Main routine that checks for files of various types and performs the import.
 def importFiles():
 
-    #2020-09-20.ghw Added importing SystemSettings
     importSystemSettings()
     importFile(doCommonParamsFile, "params_common")
     importFile(doCCTFile, "params_cct")
@@ -327,15 +308,11 @@ def importSystemSettings():
             for file in files:
                 doSystemsSettingsFile(file)
 
-                #2020-09-20.ghw
-                ##if successful, delete the file from the working directory.
-                #delete_file(file)
                 #if successful, move the file from the working directory to the archive folder. If not successful, move the file to the Problems folder
                 move_file_to_ArchiveFolder(file)
     except:
         #log the exception - which may be simply a re-log of one that occurred in doSystemSettingsFile().
         handle_exception()
-        #2020-09-20.ghw: if not successful, move the file to the problem folder
         move_file_to_ProblemFolder(file)
 
 #parse the system settings file and load the data to the db.
@@ -395,15 +372,11 @@ def importFile(functionDef, setting):
                     #pass the file name and test name to the passed function.
                     functionDef(file, Path(testDir).name)
 
-                    #2020-09-20.ghw
-                    ##if successful, delete the file from the working directory.
-                    #delete_file(file)
                     #if successful, move the file to the archive folder
                     move_file_to_ArchiveFolder(file)
 
     except:
         handle_exception()
-        #2020-09-20.ghw: if not successful, move the file to the problem folder
         move_file_to_ProblemFolder(file)
 
 #Imports the common params file information
@@ -564,8 +537,6 @@ def doCycleFile(file, testName):
             for line in lines[1:]:  #skip the first line since that has the column names.
                 splitline = line.strip().split("\t")
 
-                #2020-09-20.ghw Check for duplicate row. Ended up just putting a try block around each attempt to insert a row
-                #if not checkDuplicateCycleData(testId,splitline[0]):   # this did not work
                 try:
                     sql = ("insert into CycleData "
                         "(TestId, TimeStamp, CycleNumber, ACCurrent, TCC, T01, T02, T03, T04, T05, T06, T07, T08, T09, T10, T11, T12, T13, T14, Tamb) " 
@@ -580,24 +551,6 @@ def doCycleFile(file, testName):
     except:
         handle_exception("Error with file " + file)
         raise
-
-#2020-09-20.ghw Ended up not using this routine
-# Checks to see if CycleData row has already been inserted into database
-def checkDuplicateCycleData(testId, timestamp):
-    dtTimestamp = datetime.strptime(timestamp.strip(), "%Y-%m-%d %H:%M:%S")
-    tsLow = dtTimestamp - timedelta(seconds=1)
-    tsHigh = dtTimestamp + timedelta(seconds=1)
-    sql = f"SELECT COUNT(*) FROM CycleData WHERE TestId = '{testId}' AND Timestamp > '{tsLow}' AND Timestamp < '{tsHigh}'"
-
-    cursor = getDbConnection().cursor()
-
-    #Even though it's called 'fetchone', it still returns an array, so grab the first element.
-    cursorResult = cursor.execute(sql).fetchone()[0]
-    if cursor.rowcount > 0:
-        return True
-    else:
-        return False
-
 
 
 #Handles the insertion of Resistance data
@@ -709,14 +662,11 @@ def main():
 #If this is being ran independently (as a stand alone python process) then this tells it to run the main() routine.
 if __name__ == '__main__':      #I think this __main__ thing is a python convention of some sort.
     
-    #If only one arg is passed (There will always be one arg, even if you don't specify one.  Python does it for you.  I think it's the script file name.)... then run mail
+    #If only one arg is passed (There will always be one arg, even if you don't specify one.  Python does it for you.  I think it's the script file name.)... then run main
     if len(sys.argv) == 1:
         main()
     else:
 
-        #Encrypt the argument.
-        #2020-09-20.ghw Replaced encryption with encoding/decoding
-        #ePWD = encrypt(sys.argv[1])
         ePWD = StringToASCII(sys.argv[1])
 
         #Set the database password in the .ini to the new encrypted password.

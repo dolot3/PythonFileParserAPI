@@ -1,16 +1,11 @@
 from flask import Flask
 from flask import request, jsonify
-#2020-08-16.ghw: Added Waitress
 from waitress import serve
-#2020-07-31.ghw: from configparser import SafeConfigParser  -  SafeConfigParser is deprecated
 from configparser import ConfigParser
-#2020-07-31.ghw: import pyodbc  - pyodbc not needed for this script
 import os
 import shutil
-#from cryptography.fernet import Fernet
 
 #create the parser object and read in (parse) the .INI file.    
-#2020-07-31.ghw: parser = SafeConfigParser()  -  SafeConfigParser is deprecated
 parser = ConfigParser()
 parser.read('DatabaseAPI.ini')
 
@@ -31,8 +26,6 @@ def add_systemSettings():
     rootWorkingLocation = parser.get('file_paths', 'workingFilePath')
     rootArchiveLocation = parser.get('file_paths', 'filearchivepath')
 
-    #2020-07-31.ghw: saveWorkingLocation = "%s\\\\%s" % (rootWorkingLocation, testCellId)
-    #2020-07-31.ghw: saveArchiveLocation = "%s\\\\%s" % (rootArchiveLocation, testCellId)
     saveWorkingLocation = "%s\\\\%s\\\\Settings" % (rootWorkingLocation, testCellId)
     saveArchiveLocation = "%s\\\\%s\\\\Settings" % (rootArchiveLocation, testCellId)
 
@@ -49,8 +42,6 @@ def add_data():
     rootWorkingLocation = parser.get('file_paths', 'workingFilePath')
     rootArchiveLocation = parser.get('file_paths', 'filearchivepath')
 
-    #2020-07-31.ghw: saveWorkingLocation = "%s\\\\%s\\\\%s" % (rootWorkingLocation, testCellId, testName)
-    #2020-07-31.ghw: saveArchiveLocation = "%s\\\\%s\\\\%s" % (rootArchiveLocation, testCellId, testName)
     saveWorkingLocation = "%s\\\\%s\\\\Tests\\\\%s" % (rootWorkingLocation, testCellId, testName)
     saveArchiveLocation = "%s\\\\%s\\\\Tests\\\\%s" % (rootArchiveLocation, testCellId, testName)
 
@@ -73,59 +64,6 @@ def save_file(file, archiveLocation, workingLocation):
     shutil.copy(archiveLocation, workingLocation)
 
 
-
-# A couple of utility functions for generating keys and encrypting text.
-#@app.route('/api/getkey', methods=['get'])
-#def generateKey():
-
-#    key = Fernet.generate_key()
-#    return key
-
-
-#@app.route('/api/encrypt', methods=['post'])
-#def encryptText():
-
-#    key = request.values['key']
-#    textToEncrypt = request.values['textToEncrypt']
-
-#    f = Fernet(key)
-#    encryptedText = f.encrypt(textToEncrypt.encode())
-
-#    return encryptedText
-
-
-#The below are test methods that you can use to make sure your client side code is working before trying to send files.  Just FYI...
-#@app.route('/api/add', methods=['get'])
-#def add_data():
-#    if 'data' in request.args:
-#        data = str(request.args['data'])
-#        if data == 'GoodData':
-#            return "Success"
-#        else:
-#            return "Failure"
-#    else:
-#        return "No Data"
-
-
-#@app.route('/api/add', methods=['post'])
-#def add_dataPost():
-#    if not request.json or not 'title' in request.json:
-#        data = { 'Success' : False }
-#    else:
-#        data = {
-#                'Title' : request.json['title'],
-#                'Desc' : request.json['description'],
-#                'Success' : True
-#            }
-#    return jsonify(data)
-
-
-#Actually launches the webserver and this app - listening on port 5000 of localhost.  Might want to test that with another machine name (on another machine) and see how it works.
-
-
-#2020-08-16.ghw: Replaced run with call to waitress server
-#if __name__ == '__main__':
-#    # Run the app server on localhost:4449
-#    app.run('localhost', 5000)
+#Actually launches the webserver and this app - listening on port 5000 of localhost.  
 serve(app, port=5000)
 
